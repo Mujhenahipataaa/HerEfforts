@@ -18,6 +18,7 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap"
       rel="stylesheet"
     />
+
     <style>
       :root {
         --apple-gray: #1c1c1e;
@@ -29,7 +30,7 @@
         background-color: #000000;
         color: #ffffff;
         -webkit-font-smoothing: antialiased;
-        overflow-x: hidden;
+        overflow: hidden; /* Clean fullscreen look */
       }
 
       .apple-card {
@@ -37,15 +38,9 @@
         border: 1px solid var(--apple-border);
         border-radius: 2.5rem;
         width: 100%;
-        /* Ensures the card itself doesn't stretch weirdly */
         max-width: 100%;
       }
 
-      /* 
-       THE FIX: 
-       1. white-space: nowrap forces the number to stay on ONE line.
-       2. I adjusted the clamp slightly (3.2rem -> 2.8rem) for 7-digit safety.
-    */
       .counter-size {
         font-size: clamp(2.8rem, 12vw, 8.5rem);
         line-height: 1;
@@ -59,7 +54,6 @@
         color: #ffffff;
         letter-spacing: -0.06em;
         display: inline-block !important;
-        /* Critical for Odometer.js not to wrap */
         white-space: nowrap !important;
       }
 
@@ -84,6 +78,26 @@
         font-weight: 600;
         color: #8e8e93;
         text-transform: uppercase;
+      }
+
+      /* Fullscreen Button Styling */
+      .fullscreen-btn {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        background: rgba(44, 44, 46, 0.6);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 0.8rem;
+        border-radius: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        opacity: 0.4;
+      }
+      .fullscreen-btn:hover {
+        opacity: 1;
+        background: rgba(44, 44, 46, 0.9);
+        transform: scale(1.05);
       }
 
       @media (min-width: 640px) {
@@ -114,14 +128,12 @@
       >
         <p class="label-caps mb-10 opacity-60">Global Play Count</p>
 
-        <!-- The Millions-Safe Counter -->
         <div
           class="counter-size flex items-center justify-center w-full text-center"
         >
           <div id="plays" class="odometer">0</div>
         </div>
 
-        <!-- iOS Footer -->
         <div class="flex flex-col items-center gap-5 mt-12">
           <div class="ios-progress">
             <div id="progress-fill"></div>
@@ -140,9 +152,47 @@
       <span class="label-caps italic">{{ shortcode }}</span>
     </div>
 
+    <!-- Fullscreen Button -->
+    <button
+      onclick="toggleFullscreen()"
+      class="fullscreen-btn"
+      title="Toggle Fullscreen"
+    >
+      <svg
+        id="fs-icon"
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="white"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path
+          d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"
+        ></path>
+      </svg>
+    </button>
+
     <script>
       const REFRESH_INTERVAL = 40;
       let timeRemaining = REFRESH_INTERVAL;
+
+      // Fullscreen Logic
+      function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch((err) => {
+            console.error(
+              `Error attempting to enable full-screen mode: ${err.message}`,
+            );
+          });
+        } else {
+          if (document.exitFullscreen) {
+            document.exitFullscreen();
+          }
+        }
+      }
 
       async function fetchMetrics() {
         try {
