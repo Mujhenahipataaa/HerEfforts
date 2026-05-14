@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Beautiful DAY!</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/odometer.js/0.4.7/themes/odometer-theme-minimal.min.css"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/odometer.js/0.4.7/odometer.min.js"></script>
+    <!-- Using Inter as a close alternative to San Francisco -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        --apple-gray: #1c1c1e;
+        --apple-border: #2c2c2e;
+      }
+
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #000000;
+        color: #ffffff;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* The Apple Squircle Card */
+      .apple-card {
+        background-color: var(--apple-gray);
+        border: 1px solid var(--apple-border);
+        border-radius: 2.5rem;
+        transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      /* Odometer Customization: Pure White, Heavy Weight */
+      .odometer {
+        font-weight: 800;
+        color: #ffffff;
+        letter-spacing: -0.05em;
+      }
+
+      /* Minimal Progress Bar (iOS Style) */
+      .ios-progress {
+        height: 2px;
+        width: 100px;
+        background: #3a3a3c;
+        border-radius: 1px;
+        overflow: hidden;
+      }
+      #progress-fill {
+        height: 100%;
+        width: 0%;
+        background: #ffffff;
+        transition: width 1s linear;
+      }
+
+      .label-caps {
+        letter-spacing: 0.1em;
+        font-size: 0.65rem;
+        font-weight: 600;
+        color: #8e8e93;
+      }
+    </style>
+  </head>
+  <body class="flex flex-col items-center justify-center min-h-screen p-6">
+    <!-- Top Status (Dynamic Island Vibe) -->
+    <div
+      class="mb-12 flex items-center gap-2 bg-[#1C1C1E] border border-[#2C2C2E] px-4 py-1.5 rounded-full shadow-lg"
+    >
+      <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+      <span class="label-caps uppercase">Live </span>
+    </div>
+
+    <!-- Main Counter Module -->
+    <div>
+      <div class="apple-card p-12 md:p-16 flex flex-col items-center">
+        <p class="label-caps uppercase mb-8">
+          The Number of people watched your creation!
+        </p>
+
+        <!-- Large Display -->
+        <div class="text-7xl md:text-8xl lg:text-9xl mb-8">
+          <div id="plays" class="odometer">0</div>
+        </div>
+
+        <!-- iOS Style Footer -->
+        <div class="flex flex-col items-center gap-4 mt-4">
+          <div class="ios-progress">
+            <div id="progress-fill"></div>
+          </div>
+          <p class="text-[11px] text-[#8E8E93] font-medium tracking-wide">
+            Next update in <span id="timer">40</span>s
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const REFRESH_INTERVAL = 40;
+      let timeRemaining = REFRESH_INTERVAL;
+
+      async function fetchMetrics() {
+        try {
+          const response = await fetch("/api/data");
+          const data = await response.json();
+
+          if (data.plays !== undefined) {
+            document.getElementById("plays").innerHTML = data.plays;
+          }
+        } catch (err) {
+          console.error("API Error");
+        }
+        timeRemaining = REFRESH_INTERVAL;
+      }
+
+      // Logic for the iOS progress bar and timer
+      setInterval(() => {
+        if (timeRemaining > 0) {
+          timeRemaining--;
+          const progressWidth =
+            ((REFRESH_INTERVAL - timeRemaining) / REFRESH_INTERVAL) * 100;
+          document.getElementById("progress-fill").style.width =
+            progressWidth + "%";
+          document.getElementById("timer").innerText = timeRemaining;
+        } else {
+          fetchMetrics();
+        }
+      }, 1000);
+
+      // Initial launch
+      fetchMetrics();
+    </script>
+  </body>
+</html>
