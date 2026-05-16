@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>The Beautiful DAY!</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/odometer.js/0.4.7/themes/odometer-theme-minimal.min.css"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/odometer.js/0.4.7/odometer.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --apple-gray: #1c1c1e;
+        --apple-border: #2c2c2e;
+      }
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #000000;
+        color: #ffffff;
+        -webkit-font-smoothing: antialiased;
+        overflow: hidden;
+      }
+      .apple-card {
+        background-color: var(--apple-gray);
+        border: 1px solid var(--apple-border);
+        border-radius: 2.5rem;
+        width: 100%;
+        max-width: 100%;
+      }
+      .counter-size {
+        font-size: clamp(2.8rem, 12vw, 8.5rem);
+        line-height: 1;
+        white-space: nowrap;
+        display: block;
+        width: 100%;
+      }
+      .odometer {
+        font-weight: 800;
+        color: #ffffff;
+        letter-spacing: -0.06em;
+        display: inline-block !important;
+        white-space: nowrap !important;
+      }
+      .ios-progress {
+        height: 2px;
+        width: 60px;
+        background: #3a3a3c;
+        border-radius: 1px;
+        overflow: hidden;
+      }
+      #progress-fill {
+        height: 100%;
+        width: 0%;
+        background: #ffffff;
+        transition: width 1s linear;
+      }
+      .label-caps {
+        letter-spacing: 0.12em;
+        font-size: 0.6rem;
+        font-weight: 600;
+        color: #8e8e93;
+        text-transform: uppercase;
+      }
+      .fullscreen-btn {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        background: rgba(44, 44, 46, 0.6);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 0.8rem;
+        border-radius: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        opacity: 0.4;
+      }
+      .fullscreen-btn:hover {
+        opacity: 1;
+        background: rgba(44, 44, 46, 0.9);
+        transform: scale(1.05);
+      }
+
+      /* ETA Badge */
+      .eta-badge {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: #1c1c1e;
+        border: 1px solid #2c2c2e;
+        border-radius: 1rem;
+        padding: 0.5rem 1rem;
+        margin-top: 1.2rem;
+        transition: opacity 0.4s ease;
+      }
+      .eta-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #f97316;
+        flex-shrink: 0;
+        animation: pulse-orange 1.5s infinite;
+      }
+      @keyframes pulse-orange {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.4;
+          transform: scale(0.7);
+        }
+      }
+      .eta-text {
+        font-size: 0.65rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #8e8e93;
+      }
+      .eta-value {
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #f97316;
+      }
+
+      /* Celebration overlay */
+      #celebration-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        background: rgba(0, 0, 0, 0.85);
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+      }
+      #celebration-overlay.show {
+        display: flex;
+      }
+      .celebration-number {
+        font-size: clamp(4rem, 18vw, 12rem);
+        font-weight: 800;
+        letter-spacing: -0.06em;
+        line-height: 1;
+        background: linear-gradient(
+          135deg,
+          #ffffff 0%,
+          #f97316 60%,
+          #facc15 100%
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+      .celebration-sub {
+        font-size: clamp(1rem, 3vw, 1.6rem);
+        font-weight: 600;
+        color: #ffffff;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        margin-top: 1rem;
+        opacity: 0.8;
+      }
+      .dismiss-btn {
+        margin-top: 2.5rem;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #fff;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        padding: 0.6rem 1.5rem;
+        border-radius: 2rem;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      .dismiss-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+
+      @media (min-width: 640px) {
+        .label-caps {
+          font-size: 0.7rem;
+        }
+        .ios-progress {
+          width: 100px;
+        }
+      }
+    </style>
+  </head>
+  <body
+    class="flex flex-col items-center justify-center min-h-screen p-4 sm:p-10"
+  >
+    <!-- Celebration Overlay -->
+    <div id="celebration-overlay">
+      <div class="celebration-number">2.4M</div>
+      <div class="celebration-sub">2.4 Million Views 🎉</div>
+      <button class="dismiss-btn" onclick="dismissCelebration()">
+        Dismiss
+      </button>
+    </div>
+
+    <!-- Status Bar -->
+    <div
+      class="mb-10 flex items-center gap-3 bg-[#1C1C1E] border border-[#2C2C2E] px-5 py-2 rounded-full shadow-lg"
+    >
+      <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+      <span class="label-caps">Live Feed</span>
+    </div>
+
+    <!-- Main Container -->
+    <div class="w-full max-w-5xl mx-auto">
+      <div
+        class="apple-card p-10 sm:p-16 md:p-24 flex flex-col items-center shadow-2xl"
+      >
+        <p class="label-caps mb-10 opacity-60">Global Play Count</p>
+
+        <div
+          class="counter-size flex items-center justify-center w-full text-center"
+        >
+          <div id="plays" class="odometer">0</div>
+        </div>
+
+        <!-- ETA Badge -->
+        <div class="eta-badge" id="eta-badge">
+          <span class="eta-dot"></span>
+          <span class="eta-text">Est. to 2.4M&nbsp;—&nbsp;</span>
+          <span class="eta-value" id="eta-value">Calculating…</span>
+        </div>
+
+        <div class="flex flex-col items-center gap-5 mt-12">
+          <div class="ios-progress">
+            <div id="progress-fill"></div>
+          </div>
+          <p
+            class="text-[10px] text-[#636366] font-semibold tracking-widest uppercase"
+          >
+            Refreshing in <span id="timer">10</span>s
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sub-Text -->
+    <div class="mt-8 flex gap-4 items-center opacity-30">
+      <span class="label-caps italic">{{ shortcode }}</span>
+    </div>
+
+    <!-- Fullscreen Button -->
+    <button
+      onclick="toggleFullscreen()"
+      class="fullscreen-btn"
+      title="Toggle Fullscreen"
+    >
+      <svg
+        id="fs-icon"
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="white"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path
+          d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"
+        ></path>
+      </svg>
+    </button>
+
+    <script>
+      const REFRESH_INTERVAL = 10;
+      const TARGET_VIEWS = 2_400_000;
+      let timeRemaining = REFRESH_INTERVAL;
+      let celebrationFired = false;
+
+      // ETA tracking — store last two data points
+      const history = []; // [{plays, ts}]
+
+      function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+          document.documentElement
+            .requestFullscreen()
+            .catch((err) => console.error(err));
+        } else {
+          document.exitFullscreen && document.exitFullscreen();
+        }
+      }
+
+      function formatETA(seconds) {
+        if (!isFinite(seconds) || seconds <= 0) return "Almost there!";
+        const d = Math.floor(seconds / 86400);
+        const h = Math.floor((seconds % 86400) / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        if (d > 0) return `~${d}d ${h}h`;
+        if (h > 0) return `~${h}h ${m}m`;
+        if (m > 0) return `~${m}m`;
+        return "< 1 min";
+      }
+
+      function updateETA(currentPlays) {
+        const etaEl = document.getElementById("eta-value");
+        const badge = document.getElementById("eta-badge");
+
+        if (currentPlays >= TARGET_VIEWS) {
+          badge.style.opacity = "0";
+          return;
+        }
+
+        const now = Date.now();
+        history.push({ plays: currentPlays, ts: now });
+        if (history.length > 10) history.shift(); // keep last 10 points
+
+        if (history.length < 2) {
+          etaEl.textContent = "Calculating…";
+          return;
+        }
+
+        // Rate = views per second over the tracked window
+        const oldest = history[0];
+        const viewsDelta = currentPlays - oldest.plays;
+        const timeDelta = (now - oldest.ts) / 1000; // seconds
+        if (viewsDelta <= 0 || timeDelta <= 0) {
+          etaEl.textContent = "Calculating…";
+          return;
+        }
+
+        const ratePerSec = viewsDelta / timeDelta;
+        const remaining = TARGET_VIEWS - currentPlays;
+        const etaSecs = remaining / ratePerSec;
+
+        etaEl.textContent = formatETA(etaSecs);
+      }
+
+      function fireConfetti() {
+        const duration = 8000;
+        const end = Date.now() + duration;
+        const colors = ["#f97316", "#facc15", "#ffffff", "#fb923c", "#fde68a"];
+
+        (function frame() {
+          confetti({
+            particleCount: 6,
+            angle: 60,
+            spread: 70,
+            origin: { x: 0 },
+            colors,
+            zIndex: 200,
+          });
+          confetti({
+            particleCount: 6,
+            angle: 120,
+            spread: 70,
+            origin: { x: 1 },
+            colors,
+            zIndex: 200,
+          });
+          if (Date.now() < end) requestAnimationFrame(frame);
+        })();
+      }
+
+      function triggerCelebration() {
+        if (celebrationFired) return;
+        celebrationFired = true;
+        document.getElementById("celebration-overlay").classList.add("show");
+        fireConfetti();
+      }
+
+      function dismissCelebration() {
+        document.getElementById("celebration-overlay").classList.remove("show");
+      }
+
+      async function fetchMetrics() {
+        try {
+          const response = await fetch("/api/plays");
+          const data = await response.json();
+          if (data.plays !== undefined) {
+            document.getElementById("plays").innerHTML = data.plays;
+            updateETA(data.plays);
+            if (data.plays >= TARGET_VIEWS) triggerCelebration();
+          }
+        } catch (err) {
+          console.warn("Syncing...");
+        }
+        timeRemaining = REFRESH_INTERVAL;
+      }
+
+      setInterval(() => {
+        if (timeRemaining > 0) {
+          timeRemaining--;
+          const progressWidth =
+            ((REFRESH_INTERVAL - timeRemaining) / REFRESH_INTERVAL) * 100;
+          document.getElementById("progress-fill").style.width =
+            progressWidth + "%";
+          document.getElementById("timer").innerText = timeRemaining;
+        } else {
+          fetchMetrics();
+        }
+      }, 1000);
+
+      fetchMetrics();
+    </script>
+  </body>
+</html>
