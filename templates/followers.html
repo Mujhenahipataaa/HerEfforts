@@ -6,7 +6,7 @@
       name="viewport"
       width="device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-    <title>Live Followers Counter</title>
+    <title>Witness 🥳</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link
       rel="stylesheet"
@@ -208,7 +208,7 @@
   >
     <!-- Celebration Overlay -->
     <div id="celebration-overlay">
-      <div class="celebration-number" id="celebration-target-text">1K</div>
+      <div class="celebration-number" id="celebration-target-text">500</div>
       <div class="celebration-sub">Milestone Reached! 🎉</div>
       <button class="dismiss-btn" onclick="dismissCelebration()">
         Dismiss
@@ -240,7 +240,7 @@
         <div class="eta-badge" id="eta-badge">
           <span class="eta-dot"></span>
           <span class="eta-text" id="eta-title-text"
-            >Est. to 1K&nbsp;—&nbsp;</span
+            >Est. to 500&nbsp;—&nbsp;</span
           >
           <span class="eta-value" id="eta-value">Calculating…</span>
         </div>
@@ -252,7 +252,7 @@
           <p
             class="text-[10px] text-[#636366] font-semibold tracking-widest uppercase"
           >
-            Refreshing in <span id="timer">60</span>s
+            Refreshing in <span id="timer">10</span>s
           </p>
         </div>
       </div>
@@ -288,20 +288,30 @@
 
     <script>
       const REFRESH_INTERVAL = 10;
+      const MILESTONE_STEP = 500; // Step size configuration
 
-      // CHANGE YOUR MILESTONE TARGET HERE:
-      const TARGET_FOLLOWERS = 1000;
-      const TARGET_DISPLAY_TEXT = "1K";
-
+      let targetFollowers = MILESTONE_STEP;
+      let targetInitialized = false;
       let timeRemaining = REFRESH_INTERVAL;
-      let celebrationFired = false;
       const history = []; // [{followers, ts}]
 
-      // Update target UI texts dynamically
-      document.getElementById("celebration-target-text").textContent =
-        TARGET_DISPLAY_TEXT;
-      document.getElementById("eta-title-text").innerHTML =
-        `Est. to ${TARGET_DISPLAY_TEXT}&nbsp;—&nbsp;`;
+      // Helper to cleanly convert number increments into strings like '1.5K' or '2K'
+      function formatMilestone(val) {
+        if (val >= 1000) {
+          const kValue = val / 1000;
+          return Number.isInteger(kValue)
+            ? kValue + "K"
+            : kValue.toFixed(1) + "K";
+        }
+        return val.toString();
+      }
+
+      // Update structural targeting UI text elements
+      function updateTargetUI() {
+        const displayText = formatMilestone(targetFollowers);
+        document.getElementById("eta-title-text").innerHTML =
+          `Est. to ${displayText}&nbsp;—&nbsp;`;
+      }
 
       function toggleFullscreen() {
         if (!document.fullscreenElement) {
@@ -328,10 +338,8 @@
         const etaEl = document.getElementById("eta-value");
         const badge = document.getElementById("eta-badge");
 
-        if (currentFollowers >= TARGET_FOLLOWERS) {
-          badge.style.opacity = "0";
-          return;
-        }
+        // Dynamic targets mean the ETA module should always stay visible
+        badge.style.opacity = "1";
 
         const now = Date.now();
         history.push({ followers: currentFollowers, ts: now });
@@ -351,9 +359,14 @@
         }
 
         const ratePerSec = followersDelta / timeDelta;
-        const remaining = TARGET_FOLLOWERS - currentFollowers;
-        const etaSecs = remaining / ratePerSec;
+        const remaining = targetFollowers - currentFollowers;
 
+        if (remaining <= 0) {
+          etaEl.textContent = "Almost there!";
+          return;
+        }
+
+        const etaSecs = remaining / ratePerSec;
         etaEl.textContent = formatETA(etaSecs);
       }
 
@@ -383,9 +396,9 @@
         })();
       }
 
-      function triggerCelebration() {
-        if (celebrationFired) return;
-        celebrationFired = true;
+      function triggerCelebration(milestoneValue) {
+        document.getElementById("celebration-target-text").textContent =
+          formatMilestone(milestoneValue);
         document.getElementById("celebration-overlay").classList.add("show");
         fireConfetti();
       }
@@ -399,9 +412,37 @@
           const response = await fetch("/api/followers");
           const data = await response.json();
           if (data.followers !== undefined) {
-            document.getElementById("followers").innerHTML = data.followers;
-            updateETA(data.followers);
-            if (data.followers >= TARGET_FOLLOWERS) triggerCelebration();
+            const currentFollowers = data.followers;
+            document.getElementById("followers").innerHTML = currentFollowers;
+
+            // Auto-align milestone threshold targeting on immediate initialization
+            if (!targetInitialized) {
+              targetFollowers =
+                Math.floor(currentFollowers / MILESTONE_STEP) * MILESTONE_STEP +
+                MILESTONE_STEP;
+              updateTargetUI();
+              targetInitialized = true;
+            }
+
+            // Milestone Cross Check
+            if (currentFollowers >= targetFollowers) {
+              const reachedMilestone =
+                Math.floor(currentFollowers / MILESTONE_STEP) * MILESTONE_STEP;
+              const displayMilestone = Math.max(
+                targetFollowers,
+                reachedMilestone,
+              );
+
+              triggerCelebration(displayMilestone);
+
+              // Shift immediately to the next dynamic tier threshold
+              targetFollowers =
+                Math.floor(currentFollowers / MILESTONE_STEP) * MILESTONE_STEP +
+                MILESTONE_STEP;
+              updateTargetUI();
+            }
+
+            updateETA(currentFollowers);
           }
         } catch (err) {
           console.warn("Syncing...");
